@@ -21,12 +21,11 @@ public class Player : MonoBehaviour
 		myRigidbody = GetComponent<Rigidbody2D>();
 	}
 	
-	void FixedUpdate ()
+	void Update ()
 	{
 		Run();
 		FlipSprite();
 		Jump();
-		print( myRigidbody.velocity.y );
 	}
 
 	void Run()
@@ -44,9 +43,13 @@ public class Player : MonoBehaviour
 		// TODO Fix falling animation when next to a wall
 		// TODO Wall riding animation
 		// If falling, set animation
-		if ( myRigidbody.velocity.y < Mathf.Epsilon )
+		if ( myRigidbody.velocity.y < 0 )
 		{
 			animator.SetBool( "Landing", true );
+		}
+		else
+		{
+			animator.SetBool( "Landing", false );
 		}
 
 		// If not touching the Ground layer, exit
@@ -54,7 +57,6 @@ public class Player : MonoBehaviour
 		if ( !myCollider2D.IsTouchingLayers( LayerMask.GetMask( "Ground" ))) { return; }
 
 		animator.ResetTrigger( "Jumping" );
-		animator.SetBool( "Landing", false );
 
 		if ( CrossPlatformInputManager.GetButtonDown( "Jump" ) )
 		{
