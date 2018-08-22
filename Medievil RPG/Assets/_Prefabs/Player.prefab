@@ -24,7 +24,7 @@ GameObject:
   - component: {fileID: 50454591530092368}
   - component: {fileID: 70549453229950026}
   - component: {fileID: 114671814637777244}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -38,7 +38,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1488333165297498}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.43, y: 0.03, z: 0}
+  m_LocalPosition: {x: -3.6, y: 0.12, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -108,7 +108,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7930a2eb3c14e1144946e78db041261f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  attackButtonLeeway: 0.4
   climbSpeed: 3
+  dashButtonLeeway: 0.5
+  dashSpeed: 12
   jumpSpeed: 15
   runSpeed: 4
 --- !u!212 &212284117988165372

@@ -5,13 +5,24 @@ using UnityStandardAssets.CrossPlatformInput;
 
 public class Player : MonoBehaviour
 {
+	[SerializeField] float attackButtonLeeway = .5f;
 	[SerializeField] float climbSpeed = 3f;
+	[SerializeField] float dashButtonLeeway = .5f;
+	[SerializeField] float dashSpeed = 15f;
 	[SerializeField] float jumpSpeed = 16f;
 	[SerializeField] float runSpeed = 4f;
 
+	bool facingRight = true;
+	bool isAlive = true;
+	bool isDashing = false;
+
+	float lastAttackAttempt;
+	float lastDashAttempt;
 	float startingGravity;
 	float startingRunSpeed;
-	bool isAlive = true;
+
+	int dashButtonPressCount;
+	public int attackButtonPressCount; // TODO make getter/setter and fix animation scripts
 
 	Animator animator;
 	Collider2D myCollider2D;
@@ -30,9 +41,24 @@ public class Player : MonoBehaviour
 	void Update ()
 	{
 		FlipSprite();
+
+		if ( !isDashing )
+		{
+			Run();
+		}
+		/*TODO Stop dashing and grab ladder?
+		 * else
+		{
+			if ( myCollider2D.IsTouchingLayers( LayerMask.GetMask( "Climbing" ) ) )
+			{
+				myRigidbody.velocity = Vector2.zero;
+			}
+		}*/
+
 		Climb();
-		Run();
 		Jump();
+		Dash();
+		StartCoroutine( TryAttack() );
 	}
 
 	void FlipSprite()
@@ -41,6 +67,15 @@ public class Player : MonoBehaviour
 		if ( playerHasHorizontalSpeed )
 		{
 			transform.localScale = new Vector2( Mathf.Sign( myRigidbody.velocity.x ), 1f );
+
+			if ( Mathf.Sign( myRigidbody.velocity.x ) == 1 )
+			{
+				facingRight = true;
+			}
+			else
+			{
+				facingRight = false;
+			}
 		}
 	}
 
@@ -59,7 +94,7 @@ public class Player : MonoBehaviour
 		if ( !myCollider2D.IsTouchingLayers( LayerMask.GetMask( "Climbing" ) ) )
 		{
 			myRigidbody.gravityScale = startingGravity;
-			runSpeed = startingRunSpeed;
+			//runSpeed = startingRunSpeed;
 
 			animator.SetBool( "ClimbingIdle", false );
 			animator.SetBool( "Climbing", false );
@@ -74,16 +109,15 @@ public class Player : MonoBehaviour
 
 		bool horizSpeed = Mathf.Abs( myRigidbody.velocity.x ) > Mathf.Epsilon;
 		bool playerHasVerticalSpeed = Mathf.Abs( myRigidbody.velocity.y ) > Mathf.Epsilon;
+
 		if ( playerHasVerticalSpeed || horizSpeed )
 		{
-			runSpeed = 2f;
 			animator.SetBool( "ClimbingIdle", false );
 			animator.SetBool( "Climbing", true );
 			myRigidbody.gravityScale = 0;
 		}
 		else
 		{
-			runSpeed = 2f;
 			animator.SetBool( "ClimbingIdle", true );
 			animator.SetBool( "Climbing", false );
 			myRigidbody.gravityScale = 0;
@@ -92,9 +126,8 @@ public class Player : MonoBehaviour
 
 	void Jump()
 	{
-		// TODO Fix falling animation when next to a wall
 		// TODO Wall riding animation
-		// If falling, set animation
+
 		if ( myRigidbody.velocity.y < 0 )
 		{
 			animator.SetBool( "Landing", true );
@@ -104,12 +137,9 @@ public class Player : MonoBehaviour
 			animator.SetBool( "Landing", false );
 		}
 
-		// If not touching the Ground layer, exit
-		// Otherwise set landing animation bool
 		if ( !myCollider2D.IsTouchingLayers( LayerMask.GetMask( "Ground" ) ) ) { return; }
 
 		animator.ResetTrigger( "Jumping" );
-
 		if ( CrossPlatformInputManager.GetButtonDown( "Jump" ) )
 		{
 			Vector2 jumpVelocityToAdd = new Vector2( 0, jumpSpeed );
@@ -118,4 +148,74 @@ public class Player : MonoBehaviour
 		}
 	}
 
+	void Dash()
+	{
+		var playerMovement = CrossPlatformInputManager.GetAxis( "Horizontal" );
+		if ( Input.GetKeyDown( KeyCode.LeftShift ) || Input.GetKeyDown( KeyCode.RightShift ) )
+		{
+			lastDashAttempt = Time.time;
+			dashButtonPressCount++;
+
+			if ( ( Time.time - lastDashAttempt ) < dashButtonLeeway )
+			{
+				if ( dashButtonPressCount == 1 )
+				{
+					isDashing = true;
+					animator.SetBool( "Dashing", true );
+
+					if ( facingRight )
+					{
+						myRigidbody.velocity = Vector2.right * dashSpeed;
+					}
+					else
+					{
+						myRigidbody.velocity = Vector2.left * dashSpeed;
+					}
+				}
+			}
+		}
+
+		if ( ( Time.time - lastDashAttempt ) > dashButtonLeeway )
+		{
+			EndDash();
+		}
+	}
+
+	void EndDash()
+	{
+		isDashing = false;
+		animator.SetBool( "Dashing", false );
+		dashButtonPressCount = 0;
+	}
+
+	IEnumerator TryAttack()
+	{
+		while ( true )
+		{
+			if ( CrossPlatformInputManager.GetButtonDown( "Fire1" ) )
+			{
+				attackButtonPressCount++;
+				runSpeed = 2f;
+
+				animator.SetTrigger( "Attack01" );
+				lastAttackAttempt = Time.time;
+				var currentAttackAttempt = Time.time - lastAttackAttempt;
+
+				while ( ( Time.time - lastAttackAttempt ) < attackButtonLeeway && attackButtonPressCount < 3 )
+				{
+					if ( CrossPlatformInputManager.GetButtonDown( "Fire1" ) && ( Time.time - lastAttackAttempt ) > 0.3f )
+					{
+						attackButtonPressCount++;
+						animator.SetTrigger( "Attack0" + attackButtonPressCount );
+						lastAttackAttempt = Time.time;
+					}
+					yield return null;
+				}
+
+				attackButtonPressCount = 0;
+				yield return new WaitForSeconds( attackButtonLeeway - ( Time.time - lastAttackAttempt ) );
+			}
+			yield return null;
+		}
+	}
 }
