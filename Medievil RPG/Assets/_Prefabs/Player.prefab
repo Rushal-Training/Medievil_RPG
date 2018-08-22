@@ -108,12 +108,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7930a2eb3c14e1144946e78db041261f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackButtonLeeway: 0.4
+  attackButtonLeeway: 0.8
   climbSpeed: 3
   dashButtonLeeway: 0.5
   dashSpeed: 12
   jumpSpeed: 15
   runSpeed: 4
+  attackButtonPressCount: 0
 --- !u!212 &212284117988165372
 SpriteRenderer:
   m_ObjectHideFlags: 1

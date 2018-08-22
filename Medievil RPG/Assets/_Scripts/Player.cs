@@ -12,8 +12,11 @@ public class Player : MonoBehaviour
 	[SerializeField] float jumpSpeed = 16f;
 	[SerializeField] float runSpeed = 4f;
 
+	string[] meleeTriggers = new string [] { "Attack01", "Attack02", "Attack03" };
+
 	bool facingRight = true;
 	bool isAlive = true;
+	bool isAttacking = false;
 	bool isDashing = false;
 
 	float lastAttackAttempt;
@@ -41,11 +44,27 @@ public class Player : MonoBehaviour
 	void Update ()
 	{
 		FlipSprite();
+		if ( isAttacking )
+		{
+			runSpeed = 0f;
+		}
+		else if ( animator.GetBool( "Climbing" ) )
+		{
+			runSpeed = 2f;
+		}
+		else
+		{
+			runSpeed = startingRunSpeed;
+		}
 
 		if ( !isDashing )
 		{
 			Run();
+			Melee();
 		}
+		Climb();
+		Jump();
+
 		/*TODO Stop dashing and grab ladder?
 		 * else
 		{
@@ -54,11 +73,6 @@ public class Player : MonoBehaviour
 				myRigidbody.velocity = Vector2.zero;
 			}
 		}*/
-
-		Climb();
-		Jump();
-		Dash();
-		StartCoroutine( TryAttack() );
 	}
 
 	void FlipSprite()
@@ -94,15 +108,12 @@ public class Player : MonoBehaviour
 		if ( !myCollider2D.IsTouchingLayers( LayerMask.GetMask( "Climbing" ) ) )
 		{
 			myRigidbody.gravityScale = startingGravity;
-			//runSpeed = startingRunSpeed;
-
 			animator.SetBool( "ClimbingIdle", false );
 			animator.SetBool( "Climbing", false );
 			return;
 		}
 
 		animator.SetBool( "ClimbingIdle", true );
-
 		float controlThrow = CrossPlatformInputManager.GetAxis( "Vertical" );
 		Vector2 climbVelocity = new Vector2( myRigidbody.velocity.x, controlThrow * climbSpeed );
 		myRigidbody.velocity = climbVelocity;
@@ -150,26 +161,29 @@ public class Player : MonoBehaviour
 
 	void Dash()
 	{
-		var playerMovement = CrossPlatformInputManager.GetAxis( "Horizontal" );
-		if ( Input.GetKeyDown( KeyCode.LeftShift ) || Input.GetKeyDown( KeyCode.RightShift ) )
+		if ( !isAttacking )
 		{
-			lastDashAttempt = Time.time;
-			dashButtonPressCount++;
-
-			if ( ( Time.time - lastDashAttempt ) < dashButtonLeeway )
+			var playerMovement = CrossPlatformInputManager.GetAxis( "Horizontal" );
+			if ( Input.GetKeyDown( KeyCode.LeftShift ) || Input.GetKeyDown( KeyCode.RightShift ) )
 			{
-				if ( dashButtonPressCount == 1 )
-				{
-					isDashing = true;
-					animator.SetBool( "Dashing", true );
+				lastDashAttempt = Time.time;
+				dashButtonPressCount++;
 
-					if ( facingRight )
+				if ( ( Time.time - lastDashAttempt ) < dashButtonLeeway )
+				{
+					if ( dashButtonPressCount == 1 )
 					{
-						myRigidbody.velocity = Vector2.right * dashSpeed;
-					}
-					else
-					{
-						myRigidbody.velocity = Vector2.left * dashSpeed;
+						isDashing = true;
+						animator.SetBool( "Dashing", true );
+
+						if ( facingRight )
+						{
+							myRigidbody.velocity = Vector2.right * dashSpeed;
+						}
+						else
+						{
+							myRigidbody.velocity = Vector2.left * dashSpeed;
+						}
 					}
 				}
 			}
@@ -188,16 +202,43 @@ public class Player : MonoBehaviour
 		dashButtonPressCount = 0;
 	}
 
-	IEnumerator TryAttack()
+	void Melee()
+	{
+		if ( CrossPlatformInputManager.GetButtonDown( "Fire1" ) && attackButtonPressCount < meleeTriggers.Length )
+		{
+			isAttacking = true;
+			lastAttackAttempt = Time.time;
+			var currentAttackAttempt = Time.time - lastAttackAttempt;
+
+			animator.SetTrigger( meleeTriggers [attackButtonPressCount] );
+			attackButtonPressCount++;
+		}
+
+		if ( attackButtonPressCount > 0 )
+		{
+			if ( ( Time.time - lastAttackAttempt ) > attackButtonLeeway )
+			{
+				EndMeleeAnimation();
+				attackButtonPressCount = 0;
+			}
+		}
+	}
+
+	void EndMeleeAnimation()
+	{
+		isAttacking = false;
+	}
+
+	/*IEnumerator TryAttack()
 	{
 		while ( true )
 		{
 			if ( CrossPlatformInputManager.GetButtonDown( "Fire1" ) )
 			{
 				attackButtonPressCount++;
-				runSpeed = 2f;
+				//runSpeed = 2f;
 
-				animator.SetTrigger( "Attack01" );
+				animator.SetTrigger( "Attack0" + attackButtonPressCount );
 				lastAttackAttempt = Time.time;
 				var currentAttackAttempt = Time.time - lastAttackAttempt;
 
@@ -205,8 +246,8 @@ public class Player : MonoBehaviour
 				{
 					if ( CrossPlatformInputManager.GetButtonDown( "Fire1" ) && ( Time.time - lastAttackAttempt ) > 0.3f )
 					{
-						attackButtonPressCount++;
 						animator.SetTrigger( "Attack0" + attackButtonPressCount );
+						attackButtonPressCount++;
 						lastAttackAttempt = Time.time;
 					}
 					yield return null;
@@ -217,5 +258,5 @@ public class Player : MonoBehaviour
 			}
 			yield return null;
 		}
-	}
+	}*/
 }
