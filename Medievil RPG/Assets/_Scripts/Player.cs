@@ -64,6 +64,7 @@ public class Player : MonoBehaviour
 		}
 		Climb();
 		Jump();
+		Dash();
 
 		/*TODO Stop dashing and grab ladder?
 		 * else
