@@ -44,11 +44,7 @@ public class Player : MonoBehaviour
 	void Update ()
 	{
 		FlipSprite();
-		if ( isAttacking )
-		{
-			runSpeed = 0f;
-		}
-		else if ( animator.GetBool( "Climbing" ) )
+		if ( animator.GetBool( "Climbing" ) )
 		{
 			runSpeed = 2f;
 		}
@@ -136,10 +132,8 @@ public class Player : MonoBehaviour
 		}
 	}
 
-	void Jump()
+	void Jump() // TODO Wall riding animation
 	{
-		// TODO Wall riding animation
-
 		if ( myRigidbody.velocity.y < 0 )
 		{
 			animator.SetBool( "Landing", true );
