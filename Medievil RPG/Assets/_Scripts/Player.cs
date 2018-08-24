@@ -11,6 +11,7 @@ public class Player : MonoBehaviour
 	[SerializeField] float dashSpeed = 15f;
 	[SerializeField] float jumpSpeed = 16f;
 	[SerializeField] float runSpeed = 4f;
+	[SerializeField] float wallSlideSpeed = 5f;
 
 	string[] meleeTriggers = new string [] { "Attack01", "Attack02", "Attack03" };
 
@@ -28,13 +29,15 @@ public class Player : MonoBehaviour
 	public int attackButtonPressCount; // TODO make getter/setter and fix animation scripts
 
 	Animator animator;
-	Collider2D myCollider2D;
+	BoxCollider2D myFeet;
+	CapsuleCollider2D myBodyCollider;
 	Rigidbody2D myRigidbody;
 
 	void Start ()
 	{
 		animator = GetComponent<Animator>();
-		myCollider2D = GetComponent<Collider2D>();
+		myBodyCollider = GetComponent<CapsuleCollider2D>();
+		myFeet = GetComponent<BoxCollider2D>();
 		myRigidbody = GetComponent<Rigidbody2D>();
 
 		startingGravity = myRigidbody.gravityScale;
@@ -43,7 +46,6 @@ public class Player : MonoBehaviour
 	
 	void Update ()
 	{
-		FlipSprite();
 		if ( animator.GetBool( "Climbing" ) )
 		{
 			runSpeed = 2f;
@@ -62,6 +64,21 @@ public class Player : MonoBehaviour
 		Jump();
 		Dash();
 
+		if(IsOnWall() && ! IsOnGround())
+		{
+			animator.SetBool( "Wall Slide", true );
+			if ( myRigidbody.velocity.y < -wallSlideSpeed )
+			{
+				var slideSpeed = myRigidbody.velocity;
+				slideSpeed.y = -wallSlideSpeed;
+			}
+		}
+		else
+		{
+			FlipSprite();
+			animator.SetBool( "Wall Slide", false );
+		}
+
 		/*TODO Stop dashing and grab ladder?
 		 * else
 		{
@@ -70,6 +87,26 @@ public class Player : MonoBehaviour
 				myRigidbody.velocity = Vector2.zero;
 			}
 		}*/
+	}
+
+	bool IsOnGround()
+	{
+		RaycastHit2D hit = Physics2D.Raycast( myRigidbody.transform.position, Vector2.down, 0.5f, LayerMask.GetMask( "Ground" ) );
+		return hit.collider != null;
+	}
+
+	bool IsOnWall()
+	{
+		RaycastHit2D hit = Physics2D.Raycast( myRigidbody.transform.position, Vector2.left, 0.5f, LayerMask.GetMask( "Ground" ) );
+		if ( hit.collider != null ) transform.localScale = new Vector2( 1f, 1f );
+
+		if (hit.collider == null)
+		{
+			hit = Physics2D.Raycast( myRigidbody.transform.position, Vector2.right, 0.5f, LayerMask.GetMask( "Ground" ) );
+			if(hit.collider != null) transform.localScale = new Vector2( -1f, 1f );
+		}
+
+		return hit.collider != null;
 	}
 
 	void FlipSprite()
@@ -102,7 +139,7 @@ public class Player : MonoBehaviour
 
 	void Climb()
 	{
-		if ( !myCollider2D.IsTouchingLayers( LayerMask.GetMask( "Climbing" ) ) )
+		if ( !myBodyCollider.IsTouchingLayers( LayerMask.GetMask( "Climbing" ) ) )
 		{
 			myRigidbody.gravityScale = startingGravity;
 			animator.SetBool( "ClimbingIdle", false );
@@ -143,7 +180,7 @@ public class Player : MonoBehaviour
 			animator.SetBool( "Landing", false );
 		}
 
-		if ( !myCollider2D.IsTouchingLayers( LayerMask.GetMask( "Ground" ) ) ) { return; }
+		if ( !myBodyCollider.IsTouchingLayers( LayerMask.GetMask( "Ground" ) ) ) { return; }
 
 		animator.ResetTrigger( "Jumping" );
 		if ( CrossPlatformInputManager.GetButtonDown( "Jump" ) )
@@ -199,7 +236,7 @@ public class Player : MonoBehaviour
 
 	void Melee()
 	{
-		if ( CrossPlatformInputManager.GetButtonDown( "Fire1" ) && attackButtonPressCount < meleeTriggers.Length )
+		if ( CrossPlatformInputManager.GetButtonDown( "Fire1" ) && attackButtonPressCount < 3 )
 		{
 			isAttacking = true;
 			lastAttackAttempt = Time.time;

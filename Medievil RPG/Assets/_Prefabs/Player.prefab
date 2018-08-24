@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 212284117988165372}
   - component: {fileID: 50454591530092368}
   - component: {fileID: 70549453229950026}
+  - component: {fileID: 61302722032305114}
   - component: {fileID: 114671814637777244}
   m_Layer: 11
   m_Name: Player
@@ -38,7 +39,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1488333165297498}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -3.6, y: 0.12, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -64,6 +65,31 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
+--- !u!61 &61302722032305114
+BoxCollider2D:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1488333165297498}
+  m_Enabled: 0
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.8958333, y: 0.9791667}
+    newSize: {x: 1.1875, y: 1.375}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 0.65481186, y: 0.15971792}
+  m_EdgeRadius: 0
 --- !u!70 &70549453229950026
 CapsuleCollider2D:
   m_ObjectHideFlags: 1
@@ -76,8 +102,8 @@ CapsuleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.021103382, y: -0.0053987503}
-  m_Size: {x: 0.5998411, y: 0.91438264}
+  m_Offset: {x: 0, y: 0}
+  m_Size: {x: 0.7154181, y: 0.87498146}
   m_Direction: 0
 --- !u!95 &95656064187384020
 Animator:
@@ -114,6 +140,7 @@ MonoBehaviour:
   dashSpeed: 12
   jumpSpeed: 15
   runSpeed: 4
+  wallSlideSpeed: 5
   attackButtonPressCount: 0
 --- !u!212 &212284117988165372
 SpriteRenderer:
