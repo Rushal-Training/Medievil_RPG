@@ -9,14 +9,13 @@ public class Controller2D : RaycastController
 	[SerializeField] float maxClimbAngle = 45f;
 	[SerializeField] float maxDescendAngle = 45f;
 
-
 	public void Move( Vector3 velocity, bool standingOnPlatform = false )
 	{
 		UpdateRaycastOrigins();
 		collisionInfo.Reset();
 		collisionInfo.velocityOld = velocity;
 
-		if(velocity.y < 0)
+		if( velocity.y < 0 )
 		{
 			DescendSlope( ref velocity );
 		}
@@ -114,6 +113,7 @@ public class Controller2D : RaycastController
 					collisionInfo.left = directionX == -1;
 					collisionInfo.right = directionX == 1;
 				}
+			
 			}
 		}
 	}
@@ -133,7 +133,7 @@ public class Controller2D : RaycastController
 
 			if ( hit )
 			{
-				velocity.y = (hit.distance * skinWidth) *directionY;
+				velocity.y = ( hit.distance * skinWidth ) * directionY;
 				rayLength = hit.distance;
 
 				if(collisionInfo.climbingSlope)

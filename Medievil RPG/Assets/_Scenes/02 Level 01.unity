@@ -3831,6 +3831,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   accelerationTimeAirborne: 0.2
   accelerationTimeGrounded: 0.1
+  dashButtonLeeway: 0.5
+  dashSpeed: 30
   jumpHeight: 3.5
   timeToJumpApex: 0.4
   moveSpeed: 6
