@@ -79,14 +79,7 @@ public class Player : MonoBehaviour
 			animator.SetBool( "Wall Slide", false );
 		}
 
-		/*TODO Stop dashing and grab ladder?
-		 * else
-		{
-			if ( myCollider2D.IsTouchingLayers( LayerMask.GetMask( "Climbing" ) ) )
-			{
-				myRigidbody.velocity = Vector2.zero;
-			}
-		}*/
+		//TODO Stop dashing and grab ladder?
 	}
 
 	bool IsOnGround()
