@@ -9,24 +9,34 @@ public class Controller2D : RaycastController
 	[SerializeField] float maxClimbAngle = 45f;
 	[SerializeField] float maxDescendAngle = 45f;
 
-	public void Move( Vector3 velocity, bool standingOnPlatform = false )
+	Vector2 playerInput;
+
+	public void Move( Vector3 velocity, bool standingOnPlatform )
+	{
+		Move( velocity, Vector2.zero, standingOnPlatform );
+	}
+
+	public void Move( Vector3 velocity, Vector2 input, bool standingOnPlatform = false )
 	{
 		UpdateRaycastOrigins();
 		collisionInfo.Reset();
 		collisionInfo.velocityOld = velocity;
+		playerInput = input;
 
-		if( velocity.y < 0 )
-		{
-			DescendSlope( ref velocity );
-		}
 		if ( velocity.x != 0 )
 		{
-			HorizontalCollisions( ref velocity );
+			collisionInfo.faceDir = (int)Mathf.Sign( velocity.x );
+		}
+		if ( velocity.y < 0 )
+		{
+			DescendSlope( ref velocity );
 		}
 		if ( velocity.y != 0 )
 		{
 			VerticalCollisions( ref velocity );
 		}
+
+		HorizontalCollisions( ref velocity );
 
 		transform.Translate( velocity );
 
@@ -40,8 +50,10 @@ public class Controller2D : RaycastController
 	{
 		public bool above, below, left, right;
 
-		public bool climbingSlope, descendingSlope;
+		public bool climbingSlope, descendingSlope, fallingThroughPlatform;
 		public float slopeAngle, slopeAngleOld;
+
+		public int faceDir;
 
 		public Vector3 velocityOld;
 
@@ -60,12 +72,19 @@ public class Controller2D : RaycastController
 	protected override void Start()
 	{
 		base.Start();
+
+		collisionInfo.faceDir = 1;
 	}
 
 	void HorizontalCollisions( ref Vector3 velocity )
 	{
-		float directionX = Mathf.Sign( velocity.x );
+		float directionX = collisionInfo.faceDir;
 		float rayLength = Mathf.Abs( velocity.x ) + skinWidth;
+
+		if ( Mathf.Abs( velocity.x ) < skinWidth )
+		{
+			rayLength = 2 * skinWidth;
+		}
 
 		for ( int i = 0; i < horizontalRayCount; i++ )
 		{
@@ -133,6 +152,24 @@ public class Controller2D : RaycastController
 
 			if ( hit )
 			{
+				if( hit.collider.tag == "Through" )
+				{
+					if( directionY == 1 || hit.distance == 0 )
+					{
+						continue;
+					}
+					if ( collisionInfo.fallingThroughPlatform )
+					{
+						continue;
+					}
+					if ( playerInput.y == -1 )
+					{
+						collisionInfo.fallingThroughPlatform = true;
+						Invoke( "ResetFallingThroughPlatform", .5f );
+						continue;
+					}
+				}
+
 				velocity.y = ( hit.distance * skinWidth ) * directionY;
 				rayLength = hit.distance;
 
@@ -208,4 +245,9 @@ public class Controller2D : RaycastController
 		}
 	}
 
+
+	void ResetFallingThroughPlatform()
+	{
+		collisionInfo.fallingThroughPlatform = false;
+	}
 }

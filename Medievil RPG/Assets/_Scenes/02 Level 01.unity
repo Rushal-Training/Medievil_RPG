@@ -333,19 +333,19 @@ Prefab:
       objectReference: {fileID: 1786698894}
     - target: {fileID: 4953987664973540, guid: 0fbcc80003fd90e459dc8e15fe484a63, type: 2}
       propertyPath: m_LocalPosition.x
-      value: -3.9258537
+      value: -4.0158534
       objectReference: {fileID: 0}
     - target: {fileID: 4953987664973540, guid: 0fbcc80003fd90e459dc8e15fe484a63, type: 2}
       propertyPath: m_LocalPosition.y
-      value: 3.64
+      value: -1.96
       objectReference: {fileID: 0}
     - target: {fileID: 4489138415914032, guid: 0fbcc80003fd90e459dc8e15fe484a63, type: 2}
       propertyPath: m_LocalPosition.x
-      value: -3.9258537
+      value: -4.0158534
       objectReference: {fileID: 0}
     - target: {fileID: 4489138415914032, guid: 0fbcc80003fd90e459dc8e15fe484a63, type: 2}
       propertyPath: m_LocalPosition.y
-      value: 3.64
+      value: -1.96
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0fbcc80003fd90e459dc8e15fe484a63, type: 2}
@@ -708,7 +708,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 714051839}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.53, y: 4.26, z: 0}
+  m_LocalPosition: {x: 0.49, y: -1.46, z: 0}
   m_LocalScale: {x: 3.08, y: 0.6, z: 8.15}
   m_Children: []
   m_Father: {fileID: 0}
@@ -806,7 +806,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 913132385}
   m_LocalRotation: {x: -0, y: -0, z: 0.2756194, w: 0.9612669}
-  m_LocalPosition: {x: 2.44, y: -0.95, z: 0}
+  m_LocalPosition: {x: 2.27, y: -4.02, z: 0}
   m_LocalScale: {x: 14.95, y: 0.82, z: 7.94}
   m_Children: []
   m_Father: {fileID: 0}
@@ -3819,7 +3819,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1786698888}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.28, y: 3.64, z: 0}
+  m_LocalPosition: {x: -5.37, y: -1.96, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -3843,6 +3843,10 @@ MonoBehaviour:
   jumpHeight: 3.5
   timeToJumpApex: 0.4
   moveSpeed: 6
+  wallSlideSpeedMax: 3
+  wallJumpClimb: {x: 7.5, y: 16}
+  wallJumpOff: {x: 8.5, y: 7}
+  wallJumpAcross: {x: 18, y: 17}
 --- !u!1 &2059529180
 GameObject:
   m_ObjectHideFlags: 0

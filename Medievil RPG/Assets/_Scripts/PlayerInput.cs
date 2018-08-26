@@ -10,11 +10,18 @@ public class PlayerInput : MonoBehaviour
 	[SerializeField] float accelerationTimeGrounded = .1f;
 	[SerializeField] float dashButtonLeeway = .5f;
 	[SerializeField] float dashSpeed = 15f;
-	[SerializeField] float jumpHeight = 3.5f;
+	[SerializeField] float maxJumpHeight = 3.5f;
+	[SerializeField] float minJumpHeight = 1f;
 	[SerializeField] float timeToJumpApex = .4f;
 	[SerializeField] float moveSpeed = 5f;
+	[SerializeField] float wallSlideSpeedMax = 3f;
+	[SerializeField] Vector2 wallJumpClimb;
+	[SerializeField] Vector2 wallJumpOff;
+	[SerializeField] Vector2 wallJumpAcross;
+	[SerializeField] float wallStickTime;
+	[SerializeField] float wallUnstickTime;
 
-	float gravity, jumpVelocity, lastDashAttempt, velocityXSmoothing;
+	float gravity, maxJumpVelocity, minJumpVelocity, lastDashAttempt, velocityXSmoothing;
 	int dashButtonPressCount;
 
 	Animator animator;
@@ -26,18 +33,48 @@ public class PlayerInput : MonoBehaviour
 		animator = GetComponent<Animator>();
 		controller2D = GetComponent<Controller2D>();
 
-		gravity = -( 2 * jumpHeight ) / Mathf.Pow( timeToJumpApex, 2 );
-		jumpVelocity = Mathf.Abs( gravity ) * timeToJumpApex;
+		gravity = -( 2 * maxJumpHeight ) / Mathf.Pow( timeToJumpApex, 2 );
+		maxJumpVelocity = Mathf.Abs( gravity ) * timeToJumpApex;
+		minJumpVelocity = Mathf.Sqrt( 2 * Mathf.Abs( gravity ) * minJumpHeight );
 	}
 	
 	void Update ()
 	{
-		if( controller2D.collisionInfo.above || controller2D.collisionInfo.below )
-		{
-			velocity.y = 0;
-		}
-
 		Vector2 input = new Vector2( Input.GetAxisRaw( "Horizontal" ), Input.GetAxisRaw( "Vertical" ) );
+		int wallDirX = ( controller2D.collisionInfo.left ) ? -1 : 1;
+
+		float tartgetVelocityX = input.x * moveSpeed;
+		velocity.x = Mathf.SmoothDamp( velocity.x, tartgetVelocityX, ref velocityXSmoothing, ( controller2D.collisionInfo.below ) ? accelerationTimeGrounded : accelerationTimeAirborne );
+		velocity.y += gravity * Time.deltaTime;
+
+		bool wallSliding = false;
+		if((controller2D.collisionInfo.left || controller2D.collisionInfo.right) && !controller2D.collisionInfo.below && velocity.y < 0 )
+		{
+			wallSliding = true;
+
+			if ( velocity.y < -wallSlideSpeedMax )
+			{
+				velocity.y = -wallSlideSpeedMax;
+			}
+
+			if ( wallUnstickTime > 0 )
+			{
+				velocity.x = 0;
+				velocityXSmoothing = 0;
+				if ( input.x != wallDirX && input.x != 0 )
+				{
+					wallUnstickTime -= Time.deltaTime;
+				}
+				else
+				{
+					wallUnstickTime = wallStickTime;
+				}
+			}
+			else
+			{
+				wallUnstickTime = wallStickTime;
+			}
+		}
 
 		animator.SetBool( "Running", ( Mathf.Abs( input.x ) > 0 ) );
 		bool facingRight = Mathf.Sign( velocity.x ) == 1;
@@ -52,10 +89,41 @@ public class PlayerInput : MonoBehaviour
 			animator.SetBool( "Landing", false );
 		}
 
-		if ( Input.GetKeyDown( KeyCode.Space ) && controller2D.collisionInfo.below )
+		if ( Input.GetKeyDown( KeyCode.Space ) )
 		{
+
+			if ( wallSliding )
+			{
+				if ( wallDirX == input.x )
+				{
+					velocity.x = -wallDirX * wallJumpClimb.x;
+					velocity.y = wallJumpClimb.y;
+				}
+				else if ( input.x == 0 )
+				{
+					velocity.x = -wallDirX * wallJumpOff.x;
+					velocity.y = wallJumpOff.y;
+				}
+				else
+				{
+					velocity.x = -wallDirX * wallJumpAcross.x;
+					velocity.y = wallJumpAcross.y;
+				}
+			}
+			if ( controller2D.collisionInfo.below )
+			{
+
+			}
 			animator.SetTrigger( "Jumping" );
-			velocity.y = jumpVelocity;
+			velocity.y = maxJumpVelocity;
+		}
+		if ( Input.GetKeyUp( KeyCode.Space ) )
+		{
+			if ( velocity.y > minJumpVelocity )
+			{
+				velocity.y = minJumpVelocity;
+			}
+			
 		}
 
 		if ( Input.GetKeyDown( KeyCode.LeftShift ) || Input.GetKeyDown( KeyCode.RightShift ) )
@@ -87,11 +155,12 @@ public class PlayerInput : MonoBehaviour
 			EndDash();
 		}
 
-		float tartgetVelocityX = input.x * moveSpeed;
-		velocity.x = Mathf.SmoothDamp( velocity.x, tartgetVelocityX, ref velocityXSmoothing, (controller2D.collisionInfo.below)?accelerationTimeGrounded:accelerationTimeAirborne );
-		velocity.y += gravity * Time.deltaTime;
+		controller2D.Move( velocity * Time.deltaTime, input );
 
-		controller2D.Move( velocity * Time.deltaTime );
+		if ( controller2D.collisionInfo.above || controller2D.collisionInfo.below )
+		{
+			velocity.y = 0;
+		}
 	}
 
 	void EndDash()
