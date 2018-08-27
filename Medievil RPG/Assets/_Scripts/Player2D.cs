@@ -140,6 +140,7 @@ public class Player2D : MonoBehaviour
 	{
 		wallDirX = ( controller2D.collisionInfo.left ) ? -1 : 1;
 		wallSliding = false;
+
 		if ( ( controller2D.collisionInfo.left || controller2D.collisionInfo.right ) && !controller2D.collisionInfo.below && velocity.y < 0 )
 		{
 			wallSliding = true;

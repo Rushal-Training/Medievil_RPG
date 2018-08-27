@@ -15,7 +15,7 @@ public class Player : MonoBehaviour
 	[SerializeField] Vector2 wallJumpClimb;
 	[SerializeField] Vector2 wallJumpOff;
 	[SerializeField] Vector2 wallJumpAcross;
-	[SerializeField] float wallSlideSpeedMax = 5f;
+	[SerializeField] float wallSlideSpeedMax = 2f;
 	[SerializeField] float wallStickTime = .25f;
 	[SerializeField] float wallUnstickTime;
 
@@ -57,7 +57,18 @@ public class Player : MonoBehaviour
 				CrossPlatformInputManager.GetAxisRaw( "Horizontal" ),
 				CrossPlatformInputManager.GetAxisRaw( "Vertical" )
 			);
-		
+
+		FlipSprite();
+
+		if ( myRigidbody.velocity.y < 0 )
+		{
+			animator.ResetTrigger( "Jumping" );
+			animator.SetBool( "Landing", true );
+		}
+		else
+		{
+			animator.SetBool( "Landing", false );
+		}
 
 		if ( animator.GetBool( "Climbing" ) )
 		{
@@ -98,17 +109,11 @@ public class Player : MonoBehaviour
 		if ( hit.collider )
 		{
 			wallDirX = -1;
-			transform.localScale = new Vector2( 1f, 1f );
 		}
-
-		if ( !hit.collider )
+		else
 		{
 			hit = Physics2D.Raycast( myRigidbody.transform.position, Vector2.right, 0.5f, LayerMask.GetMask( "Ground" ) );
-			if ( hit.collider )
-			{
-				wallDirX = 1;
-				transform.localScale = new Vector2( -1f, 1f );
-			}
+			wallDirX = 1;
 		}
 
 		return hit.collider != null;
@@ -167,57 +172,50 @@ public class Player : MonoBehaviour
 
 	void Jump()
 	{
-		if ( myRigidbody.velocity.y < 0 )
-		{
-			animator.ResetTrigger( "Jumping" );
-			animator.SetBool( "Landing", true );
-		}
-		else
-		{
-			animator.SetBool( "Landing", false );
-		}
-
 		if ( isWallSliding )
 		{
-			if ( directionalInput.x == wallDirX )
+			if ( wallDirX == directionalInput.x )
 			{
-				myRigidbody.velocity = new Vector2( -transform.localScale.x * wallJumpClimb.x, wallJumpClimb.y );
+				myRigidbody.velocity = new Vector2( -wallDirX * wallJumpClimb.x, wallJumpClimb.y );
 			}
 			else if ( directionalInput.x == 0 )
 			{
-				myRigidbody.velocity = new Vector2( -transform.localScale.x * wallJumpOff.x, wallJumpOff.y );
+				myRigidbody.velocity = new Vector2( -wallDirX * wallJumpOff.x, wallJumpOff.y );
 			}
 			else
 			{
-				myRigidbody.velocity = new Vector2( -transform.localScale.x * wallJumpAcross.x, wallJumpAcross.y );
+				myRigidbody.velocity = new Vector2( -wallDirX * wallJumpAcross.x, wallJumpAcross.y );
 			}
 		}
 
 		if ( !IsOnGround() ) { return; }
 
 		animator.SetTrigger( "Jumping" );
-		Vector2 jumpVelocityToAdd = new Vector2( 0, jumpSpeed );
-		myRigidbody.velocity += jumpVelocityToAdd;
+		myRigidbody.velocity += new Vector2( 0, jumpSpeed );
 	}
 
 	void HandleWallSliding()
 	{
 		isWallSliding = false;
-		if ( IsOnWall() && !IsOnGround() )
+		animator.SetBool( "Wall Slide", false );
+
+		if ( IsOnWall() && !IsOnGround() /*&& myRigidbody.velocity.y < 0*/ )
 		{
-			isWallSliding = true;
 			animator.SetBool( "Wall Slide", true );
+			isWallSliding = true;
+			transform.localScale = new Vector2( -wallDirX, 1f );
+			var velocity = myRigidbody.velocity;
+
 			if ( myRigidbody.velocity.y < -wallSlideSpeedMax )
 			{
-				var slideSpeed = myRigidbody.velocity;
-				slideSpeed.y = -wallSlideSpeedMax;
+				velocity.y = -wallSlideSpeedMax;
 			}
 
 			if( wallUnstickTime > 0 )
 			{
-				myRigidbody.velocity = new Vector2( 0, myRigidbody.velocity.y );
+				velocity.x = 0;
 
-				if( directionalInput.x == wallDirX && directionalInput.x != 0 )
+				if( directionalInput.x != wallDirX && directionalInput.x != 0 )
 				{
 					wallUnstickTime -= Time.deltaTime;
 				}
@@ -231,16 +229,11 @@ public class Player : MonoBehaviour
 				wallUnstickTime = wallStickTime;
 			}
 		}
-		else
-		{
-			FlipSprite();
-			animator.SetBool( "Wall Slide", false );
-		}
 	}
 
 	void Dash()
 	{
-		if ( !isAttacking )
+		if ( !isAttacking && !isWallSliding )
 		{
 			var playerMovement = CrossPlatformInputManager.GetAxis( "Horizontal" );
 			if ( Input.GetKeyDown( KeyCode.LeftShift ) || Input.GetKeyDown( KeyCode.RightShift ) )
