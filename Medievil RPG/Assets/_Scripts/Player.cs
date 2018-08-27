@@ -17,7 +17,6 @@ public class Player : MonoBehaviour
 	[SerializeField] Vector2 wallJumpAcross;
 	[SerializeField] float wallSlideSpeedMax = 2f;
 	[SerializeField] float wallStickTime = .25f;
-	[SerializeField] float wallUnstickTime;
 
 	string [] meleeTriggers = new string [] { "Attack01", "Attack02", "Attack03" };
 
@@ -30,6 +29,7 @@ public class Player : MonoBehaviour
 	float lastDashAttempt;
 	float startingGravity;
 	float startingRunSpeed;
+	float wallUnstickTime;
 
 	int attackButtonPressCount;
 	int dashButtonPressCount;
@@ -50,7 +50,7 @@ public class Player : MonoBehaviour
 		startingRunSpeed = runSpeed;
 	}
 	
-	void Update ()
+	void FixedUpdate ()
 	{
 		directionalInput = new Vector2
 			(
@@ -199,7 +199,7 @@ public class Player : MonoBehaviour
 		isWallSliding = false;
 		animator.SetBool( "Wall Slide", false );
 
-		if ( IsOnWall() && !IsOnGround() /*&& myRigidbody.velocity.y < 0*/ )
+		if ( IsOnWall() && !IsOnGround() /*&& myRigidbody.velocity.y <= 0*/ )
 		{
 			animator.SetBool( "Wall Slide", true );
 			isWallSliding = true;

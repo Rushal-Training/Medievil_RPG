@@ -140,8 +140,11 @@ MonoBehaviour:
   dashSpeed: 12
   jumpSpeed: 15
   runSpeed: 4
-  wallSlideSpeed: 5
-  attackButtonPressCount: 0
+  wallJumpClimb: {x: 30, y: 15}
+  wallJumpOff: {x: 30, y: 15}
+  wallJumpAcross: {x: 30, y: 15}
+  wallSlideSpeedMax: 3
+  wallStickTime: 0.25
 --- !u!212 &212284117988165372
 SpriteRenderer:
   m_ObjectHideFlags: 1
