@@ -6,19 +6,25 @@ using UnityEngine;
 public class RaycastController : MonoBehaviour
 {
 	protected const float skinWidth = .015f;
+	const float distanceBetweenRays = .25f;
 
 	[SerializeField] protected LayerMask collisionMask;
-	[SerializeField] protected int horizontalRayCount = 4;
-	[SerializeField] protected int verticalRayCount = 4;
+
+	protected int horizontalRayCount;
+	protected int verticalRayCount;
 
 	protected float horizontalRaySpacing, verticalRaySpacing;
 
 	protected BoxCollider2D playerCollider;
 	protected RaycastOrigins raycastOrigins;
 
-	protected virtual void Start()
+	protected virtual void Awake()
 	{
 		playerCollider = GetComponent<BoxCollider2D>();
+	}
+
+	protected virtual void Start()
+	{
 		CalculateRaySpacing();
 	}
 
@@ -31,6 +37,12 @@ public class RaycastController : MonoBehaviour
 	{
 		Bounds bounds = playerCollider.bounds;
 		bounds.Expand( skinWidth * -2 );
+
+		float boundsWidth = bounds.size.x;
+		float boundsHeight = bounds.size.y;
+
+		horizontalRayCount = Mathf.RoundToInt( boundsHeight / distanceBetweenRays );
+		verticalRayCount = Mathf.RoundToInt( boundsWidth / distanceBetweenRays );
 
 		horizontalRayCount = Mathf.Clamp( horizontalRayCount, 2, int.MaxValue );
 		verticalRayCount = Mathf.Clamp( verticalRayCount, 2, int.MaxValue );

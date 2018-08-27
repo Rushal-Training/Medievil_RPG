@@ -11,33 +11,39 @@ public class Player : MonoBehaviour
 	[SerializeField] float dashSpeed = 15f;
 	[SerializeField] float jumpSpeed = 16f;
 	[SerializeField] float runSpeed = 4f;
-	[SerializeField] float wallSlideSpeed = 5f;
 
-	string[] meleeTriggers = new string [] { "Attack01", "Attack02", "Attack03" };
+	[SerializeField] Vector2 wallJumpClimb;
+	[SerializeField] Vector2 wallJumpOff;
+	[SerializeField] Vector2 wallJumpAcross;
+	[SerializeField] float wallSlideSpeedMax = 5f;
+	[SerializeField] float wallStickTime = .25f;
+	[SerializeField] float wallUnstickTime;
 
-	bool facingRight = true;
+	string [] meleeTriggers = new string [] { "Attack01", "Attack02", "Attack03" };
+
 	bool isAlive = true;
 	bool isAttacking = false;
 	bool isDashing = false;
+	bool isWallSliding = false;
 
 	float lastAttackAttempt;
 	float lastDashAttempt;
 	float startingGravity;
 	float startingRunSpeed;
 
+	int attackButtonPressCount;
 	int dashButtonPressCount;
-	public int attackButtonPressCount; // TODO make getter/setter and fix animation scripts
+	int wallDirX;
 
 	Animator animator;
-	BoxCollider2D myFeet;
 	CapsuleCollider2D myBodyCollider;
 	Rigidbody2D myRigidbody;
+	Vector2 directionalInput;
 
 	void Start ()
 	{
 		animator = GetComponent<Animator>();
 		myBodyCollider = GetComponent<CapsuleCollider2D>();
-		myFeet = GetComponent<BoxCollider2D>();
 		myRigidbody = GetComponent<Rigidbody2D>();
 
 		startingGravity = myRigidbody.gravityScale;
@@ -46,6 +52,13 @@ public class Player : MonoBehaviour
 	
 	void Update ()
 	{
+		directionalInput = new Vector2
+			(
+				CrossPlatformInputManager.GetAxisRaw( "Horizontal" ),
+				CrossPlatformInputManager.GetAxisRaw( "Vertical" )
+			);
+		
+
 		if ( animator.GetBool( "Climbing" ) )
 		{
 			runSpeed = 2f;
@@ -61,23 +74,14 @@ public class Player : MonoBehaviour
 			Melee();
 		}
 		Climb();
-		Jump();
-		Dash();
 
-		if(IsOnWall() && ! IsOnGround())
+		if ( CrossPlatformInputManager.GetButtonDown( "Jump" ) )
 		{
-			animator.SetBool( "Wall Slide", true );
-			if ( myRigidbody.velocity.y < -wallSlideSpeed )
-			{
-				var slideSpeed = myRigidbody.velocity;
-				slideSpeed.y = -wallSlideSpeed;
-			}
+			Jump();
 		}
-		else
-		{
-			FlipSprite();
-			animator.SetBool( "Wall Slide", false );
-		}
+
+		Dash();
+		HandleWallSliding();
 
 		//TODO Stop dashing and grab ladder?
 	}
@@ -91,12 +95,20 @@ public class Player : MonoBehaviour
 	bool IsOnWall()
 	{
 		RaycastHit2D hit = Physics2D.Raycast( myRigidbody.transform.position, Vector2.left, 0.5f, LayerMask.GetMask( "Ground" ) );
-		if ( hit.collider != null ) transform.localScale = new Vector2( 1f, 1f );
+		if ( hit.collider )
+		{
+			wallDirX = -1;
+			transform.localScale = new Vector2( 1f, 1f );
+		}
 
-		if (hit.collider == null)
+		if ( !hit.collider )
 		{
 			hit = Physics2D.Raycast( myRigidbody.transform.position, Vector2.right, 0.5f, LayerMask.GetMask( "Ground" ) );
-			if(hit.collider != null) transform.localScale = new Vector2( -1f, 1f );
+			if ( hit.collider )
+			{
+				wallDirX = 1;
+				transform.localScale = new Vector2( -1f, 1f );
+			}
 		}
 
 		return hit.collider != null;
@@ -108,15 +120,6 @@ public class Player : MonoBehaviour
 		if ( playerHasHorizontalSpeed )
 		{
 			transform.localScale = new Vector2( Mathf.Sign( myRigidbody.velocity.x ), 1f );
-
-			if ( Mathf.Sign( myRigidbody.velocity.x ) == 1 )
-			{
-				facingRight = true;
-			}
-			else
-			{
-				facingRight = false;
-			}
 		}
 	}
 
@@ -162,10 +165,11 @@ public class Player : MonoBehaviour
 		}
 	}
 
-	void Jump() // TODO Wall riding animation
+	void Jump()
 	{
 		if ( myRigidbody.velocity.y < 0 )
 		{
+			animator.ResetTrigger( "Jumping" );
 			animator.SetBool( "Landing", true );
 		}
 		else
@@ -173,14 +177,64 @@ public class Player : MonoBehaviour
 			animator.SetBool( "Landing", false );
 		}
 
-		if ( !myBodyCollider.IsTouchingLayers( LayerMask.GetMask( "Ground" ) ) ) { return; }
-
-		animator.ResetTrigger( "Jumping" );
-		if ( CrossPlatformInputManager.GetButtonDown( "Jump" ) )
+		if ( isWallSliding )
 		{
-			Vector2 jumpVelocityToAdd = new Vector2( 0, jumpSpeed );
-			myRigidbody.velocity += jumpVelocityToAdd;
-			animator.SetTrigger( "Jumping" );
+			if ( directionalInput.x == wallDirX )
+			{
+				myRigidbody.velocity = new Vector2( -transform.localScale.x * wallJumpClimb.x, wallJumpClimb.y );
+			}
+			else if ( directionalInput.x == 0 )
+			{
+				myRigidbody.velocity = new Vector2( -transform.localScale.x * wallJumpOff.x, wallJumpOff.y );
+			}
+			else
+			{
+				myRigidbody.velocity = new Vector2( -transform.localScale.x * wallJumpAcross.x, wallJumpAcross.y );
+			}
+		}
+
+		if ( !IsOnGround() ) { return; }
+
+		animator.SetTrigger( "Jumping" );
+		Vector2 jumpVelocityToAdd = new Vector2( 0, jumpSpeed );
+		myRigidbody.velocity += jumpVelocityToAdd;
+	}
+
+	void HandleWallSliding()
+	{
+		isWallSliding = false;
+		if ( IsOnWall() && !IsOnGround() )
+		{
+			isWallSliding = true;
+			animator.SetBool( "Wall Slide", true );
+			if ( myRigidbody.velocity.y < -wallSlideSpeedMax )
+			{
+				var slideSpeed = myRigidbody.velocity;
+				slideSpeed.y = -wallSlideSpeedMax;
+			}
+
+			if( wallUnstickTime > 0 )
+			{
+				myRigidbody.velocity = new Vector2( 0, myRigidbody.velocity.y );
+
+				if( directionalInput.x == wallDirX && directionalInput.x != 0 )
+				{
+					wallUnstickTime -= Time.deltaTime;
+				}
+				else
+				{
+					wallUnstickTime = wallStickTime;
+				}
+			}
+			else
+			{
+				wallUnstickTime = wallStickTime;
+			}
+		}
+		else
+		{
+			FlipSprite();
+			animator.SetBool( "Wall Slide", false );
 		}
 	}
 
@@ -201,7 +255,7 @@ public class Player : MonoBehaviour
 						isDashing = true;
 						animator.SetBool( "Dashing", true );
 
-						if ( facingRight )
+						if ( directionalInput.x == 1 )
 						{
 							myRigidbody.velocity = Vector2.right * dashSpeed;
 						}
@@ -253,35 +307,4 @@ public class Player : MonoBehaviour
 	{
 		isAttacking = false;
 	}
-
-	/*IEnumerator TryAttack()
-	{
-		while ( true )
-		{
-			if ( CrossPlatformInputManager.GetButtonDown( "Fire1" ) )
-			{
-				attackButtonPressCount++;
-				//runSpeed = 2f;
-
-				animator.SetTrigger( "Attack0" + attackButtonPressCount );
-				lastAttackAttempt = Time.time;
-				var currentAttackAttempt = Time.time - lastAttackAttempt;
-
-				while ( ( Time.time - lastAttackAttempt ) < attackButtonLeeway && attackButtonPressCount < 3 )
-				{
-					if ( CrossPlatformInputManager.GetButtonDown( "Fire1" ) && ( Time.time - lastAttackAttempt ) > 0.3f )
-					{
-						animator.SetTrigger( "Attack0" + attackButtonPressCount );
-						attackButtonPressCount++;
-						lastAttackAttempt = Time.time;
-					}
-					yield return null;
-				}
-
-				attackButtonPressCount = 0;
-				yield return new WaitForSeconds( attackButtonLeeway - ( Time.time - lastAttackAttempt ) );
-			}
-			yield return null;
-		}
-	}*/
 }
